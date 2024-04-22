@@ -1,70 +1,131 @@
+module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
+            (input clk,                          // clock, active when posedge
+            input reset,                        // synchronous reset; active high
+            input ready_lifo,
+            input [DATA_WIDTH-1:0] thing_in,
+            input [THING_WIDTH-1:0] thing_num,
+            input is_lifo_empty,
+            output reg done_thing, // signal to indicate that this passenger's luggage is done
+            output reg wr_enable, // lifo write enable
+            output reg rd_enable, // lifo read enable
+            output reg output_zero, // output zero and do not affect the stack
+            output reg valid_lifo,
+            output reg done_lifo);
 
-// module LifoController3(parameter DATA_WIDTH = 8, parameter THING_COUNT=4)(
-//     input clk,
-//     input reset,
-//     input ready,
-//     input [DATA_WIDTH-1:0] peole_thing_in,
-//     input [THING_COUNT-1:0] people_thing_out;
-//     output [1:0] push_or_pop_or_nothing,);
-//     reg [1:0] currState, nextState;
-//     parameter [DATA_WIDTH-1:0] ENDSIGN = 8'h24;
-//     parameter [DATA_WIDTH-1:0] SEPSIGN = 8'h3b;
+        reg [2:0] currState, nextState;
+        parameter[2:0] IDLE = 3'b000, PUSH = 3'b001, POP = 3'b010;
+        parameter[2:0] POP_ZERO = 3'b011, DONE_THING_INPUT = 3'b100, DONE_THING_OUTPUT = 3'b101, DONE_LIFO = 3'b110, POP_FIRST = 3'b111;
+        parameter [DATA_WIDTH-1:0] ENDSIGN = 8'h24;
+        parameter [DATA_WIDTH-1:0] SEPSIGN = 8'h3b;
+        // State Registers: Sequential logic
+        reg [THING_WIDTH-1:0] pop_num;
+        always@(posedge clk) begin
+            if (reset) begin
+                currState <= IDLE;
+            end
+            else begin
+                currState <= nextState;
+                if (currState == POP || currState == POP_FIRST) begin
+                    // !!pop_num needs to be decremented at sequential logic!!
+                    pop_num <= pop_num - 1;
+                    $display("pop_num: %d", pop_num);
+                end
+            end
+        end
+
+        reg _ready_lifo; // once "ready" is toggled to 1, '_ready' will stay 1
+
+        always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            _ready_lifo <= 0;  // Reset _ready to low on system reset
+        end else if (ready_lifo) begin
+            _ready_lifo <= 1;  // Set _ready high once ready_fifo is high
+        end
+        end
 
 
-//     // state parameters
-//     parameter[2:0] IDLE = 3'b000, PUSH = 3'b001, POP = 3'b010, DONE = 3'b011;
-//     // output control signal
-//     parameter[1:0] DO_NOTHING = 2'b00, DO_PUSH = 2'b01, DO_POP = 2'b10;
 
-//     wire [THING_COUNT-1:0] thing_num_copy;
-//     assign thing_num_copy = thing_num;
-//     // state registers (S.)
-//     always@(posedge clk) begin
-//         if (reset) begin
-//             currState <= IDLE;
-//         end
-//         else begin
-//             currState <= nextState;
-//         end
-//     end
-//     // next-state logic (C.)
-//     always@(currState or ready) begin
-//         case (currState)
-//             IDLE: begin
-//                 if (ready) begin
-//                    case (thing_in)
-//                     `ENDSIGN: nextState = DONE;
-//                     `SEPSIGN: nextState = POP;
-//                     default: nextState = PUSH;
-//                    endcase
-//                 end
-//                 else begin
-//                     nextState = IDLE;
-//                 end
-//             end
-//             POP: begin
-//                 if (thing_num_copy == 0) begin
-//                     nextState = IDLE;
-//                 end
-//                 else begin
-//                     nextState = POP;
-//                     thing_num_copy = thing_num_copy - 1;
-//                 end
-//             end
-//             DONE: nextState = IDLE;
-//             PUSH: nextState = IDLE;
+        // Next-state logic: Combinational logic
+        always@(*) begin
+            case (currState)
+                IDLE: begin
+                if (_ready_lifo) begin
+                    case(thing_in)
+                        SEPSIGN: nextState = DONE_THING_INPUT;
+                        ENDSIGN: nextState = DONE_LIFO;
+                        default: nextState = PUSH;
+                    endcase end
+                end
+                PUSH: case(thing_in)
+                    SEPSIGN: nextState = DONE_THING_INPUT;
+                    ENDSIGN: nextState = DONE_LIFO;
+                    default: nextState = PUSH;
+                endcase
+                DONE_THING_INPUT:
+                    if (pop_num == 0) begin
+                        nextState = POP_ZERO;
+                    end
+                    else begin
+                        nextState = POP_FIRST;
+                    end
+                DONE_THING_OUTPUT: nextState = IDLE;
+                DONE_LIFO: nextState = POP; // pop them into a FIFO and then output from the FIFO as fifo2
+                POP_FIRST: nextState = (pop_num-1 == 0) ? DONE_THING_OUTPUT : POP;
+                POP: nextState = (pop_num-1 == 0) ? DONE_THING_OUTPUT : POP;
+                POP_ZERO: nextState = DONE_THING_OUTPUT;
+                default: nextState = IDLE;
+            endcase
+        end
 
-//         endcase
-//     end
-//     // output logic (C.)
-//     always@(currState) begin
-//         case (currState)
-//             IDLE: push_or_pop_or_nothing = DO_NOTHING; // do nothing
-//             POP: push_or_pop_or_nothing = DO_POP; // pop
-//             DONE: push_or_pop_or_nothing = DO_NOTHING; // do nothing
-//             PUSH: push_or_pop_or_nothing = DO_PUSH; // push
-//         endcase
-//     end
-// endmodule
 
+
+
+        always@(currState) begin
+            case (currState)
+                IDLE: begin
+                    wr_enable = 0;
+                    rd_enable = 0;
+                    output_zero = 0;
+                    valid_lifo = 0;
+                    done_thing = 0; // otherwise the testbench does not read some semicolons
+                end
+                PUSH: begin
+                    wr_enable = 1;
+                    rd_enable = 0;
+                end
+                POP_FIRST: begin // because FIFO access delays 1 cycle
+                    wr_enable = 0;
+                    rd_enable = 1;
+                end
+                POP: begin
+                    wr_enable = 0;
+                    rd_enable = 1;
+                    output_zero = 0;
+                    valid_lifo = 1;
+                end
+                POP_ZERO: begin
+                    wr_enable = 0;
+                    rd_enable = 0;
+                    output_zero = 1;
+                end
+                DONE_THING_INPUT: begin
+                    wr_enable = 0;
+                    rd_enable = 0;
+                    pop_num = thing_num;
+                end
+                DONE_THING_OUTPUT: begin
+                    wr_enable = 0;
+                    rd_enable = 0;
+                    done_thing = 1;
+                    valid_lifo = 1;
+                end
+                DONE_LIFO: begin
+                    wr_enable = 0;
+                    rd_enable = 0;
+                    done_lifo = 1;
+                    valid_lifo = 0;
+                end
+            endcase
+        end
+endmodule
 

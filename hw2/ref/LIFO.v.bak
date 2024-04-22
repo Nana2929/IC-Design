@@ -18,13 +18,13 @@ module Lifo #(parameter DATA_WIDTH = 8,
         end
         else begin
             if (!full && wr_enable) begin
-                sp = sp + 1;                     // increment the pointer
-                lifo[sp] = data_in;             // push data onto the lifo
+                lifo[sp] <= data_in;             // push data onto the lifo
+                sp <= sp + 1;                     // increment lifo pointer
             end
             if (!empty && rd_enable) begin
+                sp <= sp - 1;                     // decrement lifo pointer
                 data_out <= lifo[sp];            // pop data from the lifo
-                sp <= sp - 1;                     // decrement the pointer
-        end
+            end
         end
     end
 
@@ -41,7 +41,7 @@ module Lifo_tb;
     wire [7:0] data_out;
     wire full, empty;
 
-    Lifo #(8, 16) lifo(.clk(clk), .reset(rst),
+    Fifo #(8, 16) lifo(.clk(clk), .reset(rst),
     .wr_enable(wr_en),
     .rd_enable(rd_en),
     .data_in(data_in),
@@ -68,9 +68,14 @@ module Lifo_tb;
         data_in = 8'hC; #10;
         data_in = 8'hD; #10;
 
+
         // Testing ENABLE = 0
         wr_en = 0;
         rd_en = 1;
+        data_in = 8'h1; #10;
+        data_in = 8'h2; #10;
+        data_in = 8'h3; #10;
+
 
         #10 $display("time = %d, clk = %d, data_out = %h", $time, clk, data_out);
         #10 $display("time = %d, clk = %d, data_out = %h", $time, clk, data_out);

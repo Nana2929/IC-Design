@@ -49,8 +49,7 @@ module FifoController #(parameter DATA_WIDTH = 8, parameter THING_COUNT=4)(
     end
     end
 
-
-
+    
     always@(posedge clk) begin
         if (reset) begin
             currState <= IDLE;

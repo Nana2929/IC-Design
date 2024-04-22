@@ -1,5 +1,7 @@
 `include "FIFO.v"
 `include "FifoController.v"
+`include "LIFO.v"
+`include "LifoController.v"
 module CIPU(
 input       clk,
 input       rst,
@@ -19,7 +21,7 @@ output      done_lifo,
 output      done_fifo2);
 
     // FIFO
-    wire wr_enable, rd_enable;
+    wire wr_enable_fifo, rd_enable_fifo;
     wire full_fifo, empty_fifo;
 
     reg [7:0] prev_people_thing_in;
@@ -30,12 +32,43 @@ output      done_fifo2);
     FifoController #(8, 4) fifo_controller(.clk(clk),  .reset(rst),
     .ready(ready_fifo), .is_fifo_empty(empty_fifo),
     .people_thing_in(people_thing_in),
-    .valid_fifo(valid_fifo), .done_fifo(done_fifo), .wr_enable(wr_enable), .rd_enable(rd_enable));
+    .valid_fifo(valid_fifo), .done_fifo(done_fifo), .wr_enable(wr_enable_fifo), .rd_enable(rd_enable_fifo));
 
 
     Fifo #(8, 16) fifo(.clk(clk), .reset(rst),
-    .wr_enable(wr_enable),.rd_enable(rd_enable), .data_in(prev_people_thing_in), .data_out(people_thing_out),
+    .wr_enable(wr_enable_fifo),.rd_enable(rd_enable_fifo), .data_in(prev_people_thing_in), .data_out(people_thing_out),
     .full(full_fifo), .empty(empty_fifo));
+
+
+
+
+    // LIFO
+    wire wr_enable_lifo, rd_enable_lifo;
+    wire full_lifo, empty_lifo;
+    wire output_zero;
+    reg [7:0] prev_thing_in;
+    always@(posedge clk) begin
+        prev_thing_in <= thing_in;
+    end
+    parameter ZERO = 8'h30; // "0" in ASCII
+
+    wire [7:0] data_out;
+    Lifo #(8, 16) lifo(.clk(clk), .reset(rst),
+    .wr_enable(wr_enable_lifo), .rd_enable(rd_enable_lifo),
+    .data_in(prev_thing_in), .data_out(data_out),
+    .full(full_lifo), .empty(empty_lifo));
+
+    LifoController #(8, 4) lifo_controller(.clk(clk), .reset(rst),
+    .ready_lifo(ready_lifo),
+    .thing_in(thing_in),
+    .thing_num(thing_num),
+    .is_lifo_empty(empty_lifo),
+    .done_thing(done_thing),
+    .valid_lifo(valid_lifo),
+    .output_zero(output_zero),
+    .done_lifo(done_lifo), .wr_enable(wr_enable_lifo), .rd_enable(rd_enable_lifo));
+    assign thing_out = (output_zero) ? ZERO : data_out;
+
 
 
 endmodule

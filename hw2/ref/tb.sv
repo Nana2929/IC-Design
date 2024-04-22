@@ -93,6 +93,7 @@ always@(posedge clk)begin
         if(!ready_wait)begin
             ready_fifo <= 1;
             ready_lifo <= 1;
+
             ready_wait <= 1;
         end
         else begin
@@ -109,12 +110,12 @@ end
 always@(posedge clk)begin
     if(ready_wait)begin
         people_thing_in <= pattern[pat_num];
-        $display("people_thing_in = %h", people_thing_in);
+
         if(pattern[pat_num] != 8'h24)
             pat_num <= pat_num + 1;
     end
 end
-// * FIFO *: Passenger Check-in
+
 always@(posedge clk)begin
     if(valid_fifo)begin
         if(people_thing_count >= 15)begin
@@ -124,12 +125,11 @@ always@(posedge clk)begin
             $finish;
         end
         else begin
-            if(people_thing_out == golden[people_thing_count]) begin
+            if(people_thing_out == golden[people_thing_count])
                 pass1_count <= pass1_count + 1;
-                $display("FIFO: Correct answer = %d, golden = %d", people_thing_out, golden[people_thing_count]); end 
             else begin
                 err1_count <= err1_count + 1;
-                $display("FIFO: Error at %3dth, your answer is %d but the correct answer is %d", people_thing_count, people_thing_out, golden[people_thing_count]);
+                $display("FIFO: Error at %3dth, your answer is %h but the correct answer is %h", people_thing_count, people_thing_out, golden[people_thing_count]);
             end
 
         end
@@ -177,7 +177,7 @@ end
 
 always@(posedge clk)begin
     if(valid_lifo)begin
-        if(thing_count >= 25)begin // why not 15?
+        if(thing_count >= 25)begin
             $display("\n");
             $display("!!! Failed pulling down valid_lifo signal, Simulation STOP !!!");
             $display("\n");
@@ -302,4 +302,3 @@ always@(posedge clk)begin
 end
 
 endmodule
-
