@@ -17,6 +17,12 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
         parameter[2:0] POP_ZERO = 3'b011, DONE_THING_INPUT = 3'b100, DONE_THING_OUTPUT = 3'b101, DONE_LIFO = 3'b110, POP_FIRST = 3'b111;
         parameter [DATA_WIDTH-1:0] ENDSIGN = 8'h24;
         parameter [DATA_WIDTH-1:0] SEPSIGN = 8'h3b;
+        // DONE_THING_INPUT: all luggages of the passenger go in and the number of luggages in thing_num are prepared to be popped
+        // DONE_THING_OUTPUT: all luggages of the passenger are checked and the correct number of luggages are popped
+        // DONE_LIFO: all passengers' luggages are checked and taken away.
+        // POP_FIRST: the first luggage of the passenger is popped; this is used for valid_lifo signal
+        // POP_ZERO: no luggage is popped; this is used for output_zero signal
+
         // State Registers: Sequential logic
         reg [THING_WIDTH-1:0] pop_num;
         always@(posedge clk) begin
@@ -28,7 +34,6 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
                 if (currState == POP || currState == POP_FIRST) begin
                     // !!pop_num needs to be decremented at sequential logic!!
                     pop_num <= pop_num - 1;
-                    $display("pop_num: %d", pop_num);
                 end
             end
         end
@@ -69,7 +74,7 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
                         nextState = POP_FIRST;
                     end
                 DONE_THING_OUTPUT: nextState = IDLE;
-                DONE_LIFO: nextState = POP; // pop them into a FIFO and then output from the FIFO as fifo2
+                DONE_LIFO: nextState = DONE_LIFO;
                 POP_FIRST: nextState = (pop_num-1 == 0) ? DONE_THING_OUTPUT : POP;
                 POP: nextState = (pop_num-1 == 0) ? DONE_THING_OUTPUT : POP;
                 POP_ZERO: nextState = DONE_THING_OUTPUT;
@@ -88,6 +93,7 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
                     output_zero = 0;
                     valid_lifo = 0;
                     done_thing = 0; // otherwise the testbench does not read some semicolons
+                    done_lifo = 0;
                 end
                 PUSH: begin
                     wr_enable = 1;
@@ -121,7 +127,7 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
                 end
                 DONE_LIFO: begin
                     wr_enable = 0;
-                    rd_enable = 0;
+                    rd_enable = 1;
                     done_lifo = 1;
                     valid_lifo = 0;
                 end

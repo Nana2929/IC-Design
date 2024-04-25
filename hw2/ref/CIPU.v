@@ -2,6 +2,7 @@
 `include "FifoController.v"
 `include "LIFO.v"
 `include "LifoController.v"
+`include "Fifo2Controller.v"
 module CIPU(
 input       clk,
 input       rst,
@@ -39,9 +40,6 @@ output      done_fifo2);
     .wr_enable(wr_enable_fifo),.rd_enable(rd_enable_fifo), .data_in(prev_people_thing_in), .data_out(people_thing_out),
     .full(full_fifo), .empty(empty_fifo));
 
-
-
-
     // LIFO
     wire wr_enable_lifo, rd_enable_lifo;
     wire full_lifo, empty_lifo;
@@ -52,10 +50,10 @@ output      done_fifo2);
     end
     parameter ZERO = 8'h30; // "0" in ASCII
 
-    wire [7:0] data_out;
+    wire [7:0] lifo_data_out;
     Lifo #(8, 16) lifo(.clk(clk), .reset(rst),
     .wr_enable(wr_enable_lifo), .rd_enable(rd_enable_lifo),
-    .data_in(prev_thing_in), .data_out(data_out),
+    .data_in(prev_thing_in), .data_out(lifo_data_out),
     .full(full_lifo), .empty(empty_lifo));
 
     LifoController #(8, 4) lifo_controller(.clk(clk), .reset(rst),
@@ -67,8 +65,23 @@ output      done_fifo2);
     .valid_lifo(valid_lifo),
     .output_zero(output_zero),
     .done_lifo(done_lifo), .wr_enable(wr_enable_lifo), .rd_enable(rd_enable_lifo));
-    assign thing_out = (output_zero) ? ZERO : data_out;
 
+
+    wire wr_enable_fifo2, rd_enable_fifo2;
+    wire full_fifo2, empty_fifo2;
+    wire [7:0] fifo2_out;
+
+    // need a Lifo to reverse the order of the data, so it behaves like a Fifo
+    Lifo #(8, 16) fifo2(.clk(clk), .reset(rst),
+    .wr_enable(wr_enable_fifo2), .rd_enable(rd_enable_fifo2),
+    .data_in(lifo_data_out), .data_out(fifo2_out),
+    .full(full_fifo2), .empty(empty_fifo2));
+
+    Fifo2Controller #(8, 16) fifo2_controller(.clk(clk), .reset(rst),
+    .ready(done_lifo), .is_lifo_empty(empty_lifo), .is_fifo2_empty(empty_fifo2),
+    .data_in(lifo_data_out), .wr_enable(wr_enable_fifo2), .rd_enable(rd_enable_fifo2),
+    .valid_fifo2(valid_fifo2), .done_fifo2(done_fifo2));
+    assign thing_out = (done_lifo != 1) ? ((output_zero) ? ZERO : lifo_data_out) : fifo2_out;
 
 
 endmodule

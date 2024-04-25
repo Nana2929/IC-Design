@@ -214,7 +214,8 @@ always@(posedge clk)begin
             end
             else begin
                 err3_count <= err3_count + 1;
-                $display("FIFO2: Error at %3dth, your answer is %h but the correct answer is %h", thing_fifo2_count, thing_out, golden_thing[thing_fifo2_count]);
+                // nice, testbench 忘記加上25:)
+                $display("FIFO2: Error at %3dth, your answer is %h but the correct answer is %h", thing_fifo2_count, thing_out, golden_thing[25+thing_fifo2_count]);
                 // $display("FIFO2: Error at %3dth, your answer is %s but the correct answer is %s", thing_fifo2_count, thing_out, golden_thing[thing_count]);
             end
         end
