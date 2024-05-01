@@ -7,7 +7,7 @@ module Fifo #(parameter DATA_WIDTH = 8,
               input wr_enable,                    // if the data_in is passenger, enable = 1; if the data_in is luggage, enable = 0
               input [DATA_WIDTH-1:0] data_in,
               output reg [DATA_WIDTH-1:0] data_out,
-              output reg full, empty);
+              output full, empty);
     localparam PTR_WIDTH = $clog2(DEPTH);
 
     reg [DATA_WIDTH-1:0] fifo[DEPTH-1:0];

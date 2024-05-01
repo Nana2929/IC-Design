@@ -31,10 +31,6 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
             end
             else begin
                 currState <= nextState;
-                if (currState == POP || currState == POP_FIRST) begin
-                    // !!pop_num needs to be decremented at sequential logic!!
-                    pop_num <= pop_num - 1;
-                end
             end
         end
 
@@ -83,8 +79,6 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
         end
 
 
-
-
         always@(currState) begin
             case (currState)
                 IDLE: begin
@@ -102,12 +96,14 @@ module LifoController #(parameter DATA_WIDTH = 8, parameter THING_WIDTH=4)
                 POP_FIRST: begin // because FIFO access delays 1 cycle
                     wr_enable = 0;
                     rd_enable = 1;
+                    pop_num = pop_num - 1;
                 end
                 POP: begin
                     wr_enable = 0;
                     rd_enable = 1;
                     output_zero = 0;
                     valid_lifo = 1;
+                    pop_num = pop_num - 1;
                 end
                 POP_ZERO: begin
                     wr_enable = 0;

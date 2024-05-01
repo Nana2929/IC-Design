@@ -1,8 +1,8 @@
-`include "FIFO.v"
-`include "FifoController.v"
-`include "LIFO.v"
-`include "LifoController.v"
-`include "Fifo2Controller.v"
+// `include "FIFO.v"
+// `include "FifoController.v"
+// `include "LIFO.v"
+// `include "LifoController.v"
+// `include "Fifo2Controller.v" // No need to include in Quartus sim. 
 module CIPU(
 input       clk,
 input       rst,

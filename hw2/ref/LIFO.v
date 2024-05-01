@@ -6,10 +6,10 @@ module Lifo #(parameter DATA_WIDTH = 8,
               input wr_enable,                    // write enable
               input [DATA_WIDTH-1:0] data_in,     // data input
               output reg [DATA_WIDTH-1:0] data_out, // data output
-              output reg full, empty);            // full and empty flags
+              output full, empty);            // full and empty flags
     localparam PTR_WIDTH = $clog2(DEPTH);
 
-    reg [DATA_WIDTH-1:0] lifo[DEPTH-1:0];       // lifo memory array
+    reg [DATA_WIDTH-1:0] lifo[DEPTH-1:0];        // lifo memory array
     reg [PTR_WIDTH-1:0] sp = 0;                  // lifo pointer
 
     always@(posedge clk) begin
