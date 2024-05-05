@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 // `define SDFFILE    "../SYN/SET_syn.sdf"    // Modify your sdf file name here
 `define cycle 25.0
-`define terminate_cycle 400000 // Modify your terminate cycle here
+`define terminate_cycle 400000 // 400000 // Modify your terminate cycle here
 
 
 module testfixture1;
@@ -323,18 +323,11 @@ initial begin
 		shape_mem_index = shape_mem_index + 4;
 	end
 	total_error = total_error + err_cnt;
+	$display("Pattern 3: err_cnt = %d",err_cnt);
 	if(err_cnt == 0)begin
 		score = score + 30;
 		$display("Pattern 3 pass");
 	end
-
-
-
-
-
-
-
-
 
 #(`cycle*2);
      $display("--------------------------- Simulation FINISH !!---------------------------");

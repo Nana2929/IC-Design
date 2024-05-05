@@ -23,6 +23,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
     reg [N-1:0] i, j;
     reg [N-1:0] next_i, next_j, next_change_row;
     reg [2:0] currState, nextState;
+    reg reset;
     reg first_mat_end, second_mat_end;
     parameter [2:0] RESET=3'b000, INPUT_MAT1=3'b001, INPUT_MAT2=3'b010, COMPUTE=3'b011, OUTPUT=3'b100, IDLE=3'b101;
     reg [N-1:0] M1_height, M1_width, M2_height, M2_width;
@@ -39,7 +40,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
 
     MMHelper #(DATA_WIDTH, N, OUT_DATA_WIDTH) mm_helper(
         .clk(clk),
-        .reset(rst),
+        .reset(reset),
         .wr_enable(wr_enable),
         .compute_enable(compute_enable),
         .in_data(in_data_),
@@ -48,6 +49,14 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
         .match_dim(match_dim),
         .out_data(out_data));
 
+    always@(posedge clk or posedge rst) begin
+        if (rst) begin
+            reset <= 1;
+        end
+        else begin
+            reset <= 0;
+        end
+    end
 
 
     // IDLE: resets the MM_helper's matrices and recorded heights and widths
@@ -143,7 +152,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
             end
             OUTPUT: begin
                 nextState = COMPUTE;
-                if (next_i == M1_height) begin
+                if (next_i == M1_height || is_legal == 0) begin
                     nextState = RESET;
                 end
             end
@@ -153,17 +162,19 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
     always@(currState) begin
         case(currState)
             IDLE: begin
+                valid = 0;
+                busy = 0;
                 wr_enable = 0;
                 compute_enable = 0;
             end
             RESET: begin
+                reset = 1;
                 wr_enable = 0;
                 compute_enable = 0;
                 is_first_mat = 0;
                 i = 0; j = 0;
                 next_i = 0; next_j = 0;
                 valid = 0;
-                busy = 0;
                 first_mat_end = 0;
                 second_mat_end = 0;
                 M1_height = 0; M1_width = 0; M2_height = 0; M2_width = 0;
@@ -184,9 +195,6 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                 valid = 0;
                 busy = 1;
                 wr_enable = 0;
-                if (is_legal != 1) begin
-                    valid = 1;
-                end
                 // compute_enable = 1;
                 // should be M1_width == M2_height, if not legal, then don't compute and just pull up valid and is_legal = 0
             end
