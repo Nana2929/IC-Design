@@ -49,15 +49,14 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
         .match_dim(match_dim),
         .out_data(out_data));
 
-    always@(posedge clk or posedge rst) begin
-        if (rst) begin
+    always@(*) begin
+        if (rst == 1 || currState == RESET) begin
             reset <= 1;
         end
         else begin
             reset <= 0;
         end
     end
-
 
     // IDLE: resets the MM_helper's matrices and recorded heights and widths
     // INPUT_MAT1: inputs the first matrix
@@ -66,8 +65,9 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
     // OUTPUT: outputs the computed element
 
     // state register logic
-    always@(negedge clk or negedge rst) begin
+    always@(negedge clk or posedge rst) begin
         if (rst) begin
+            i <= 0; j <= 0;
             currState <= RESET;
         end
         else begin
@@ -110,7 +110,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                 else if (col_end_) begin
                     next_i = i + 1;
                     next_j = 0;
-                end
+                end 
                 else begin
                     next_j = j + 1;
                 end
@@ -124,7 +124,6 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
             COMPUTE: begin
                 if (M1_width == M2_height) begin
                     match_dim = M1_width;
-                    compute_enable = 1;
                     is_legal = 1;
                     if (i < M1_height) begin
                         if (j+1 < M2_width) begin
@@ -139,12 +138,15 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                     end
                 end
                 else begin
-                    compute_enable = 0;
                     is_legal = 0;
                 end
                 nextState = OUTPUT;
             end
             RESET: begin
+                first_mat_end = 0;
+                second_mat_end = 0;
+                M1_height = 0; M1_width = 0; M2_height = 0; M2_width = 0;
+                next_i = 0; next_j = 0;
                 nextState = IDLE;
             end
             IDLE: begin
@@ -168,16 +170,10 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                 compute_enable = 0;
             end
             RESET: begin
-                reset = 1;
                 wr_enable = 0;
                 compute_enable = 0;
                 is_first_mat = 0;
-                i = 0; j = 0;
-                next_i = 0; next_j = 0;
                 valid = 0;
-                first_mat_end = 0;
-                second_mat_end = 0;
-                M1_height = 0; M1_width = 0; M2_height = 0; M2_width = 0;
             end
             INPUT_MAT1: begin
                 busy = 0;
@@ -192,6 +188,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                 wr_enable = 1;
             end
             COMPUTE: begin
+                compute_enable = 1;
                 valid = 0;
                 busy = 1;
                 wr_enable = 0;

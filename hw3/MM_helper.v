@@ -16,7 +16,7 @@ module MMHelper#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH
     input [N-1:0] i, j;
     // input h, w, // used when reading
     input is_first_mat; // 1 if first matrix, 0 if second matrix; only takes effect in wr_enable mode
-    input [N-1:0] match_dim; // the dimension of the matrices to match with
+    input [N-1:0] match_dim; // the dimension of the matrices to match with; 4*4 matrix at most; match_dim <= N
     output reg signed [OUT_DATA_WIDTH-1:0] out_data;
     // N * N matrix
     reg signed [DATA_WIDTH-1:0] M1 [N-1:0][N-1:0];
@@ -32,21 +32,26 @@ module MMHelper#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH
             end
         end
         else begin
-            if (wr_enable) begin
-                if (is_first_mat) begin
-                    M1[i][j] <= in_data;
-                end
-                else begin
-                    M2[i][j] <= in_data;
-                end
+            // if i or j crosses the bound, then do nothing
+            if (i >= N || j >= N) begin
+                out_data <= 0;
             end
-            else if (compute_enable) begin
-                // means compute
-                // compute the product sum of i's row in M1 and j's column in M2
-                out_data = 0;
-                for (k = 0; k < match_dim; k = k + 1) begin
-                    // $display("M1[%d][%d] = %d, M2[%d][%d] = %d", i, k, M1[i][k], k, j, M2[k][j]);
-                    out_data = out_data + M1[i][k] * M2[k][j];
+            else begin
+                if (wr_enable) begin
+                    if (is_first_mat) begin
+                        M1[i][j] <= in_data;
+                    end
+                    else begin
+                        M2[i][j] <= in_data;
+                    end
+                end
+                else if (compute_enable) begin
+                    // means compute
+                    // compute the product sum of i's row in M1 and j's column in M2
+                    out_data = 0;
+                    for (k = 0; k < match_dim && k < N; k = k + 1) begin
+                        out_data = out_data + M1[i][k] * M2[k][j];
+                    end
                 end
             end
         end
@@ -125,9 +130,9 @@ module testbench(
         #10 i= 2;
 
         #10 wr_enable = 0;
-        match_dim = 4;
         i=3;
         j=3;
+        match_dim = 4;
         #10 compute_enable = 1;
         // calc M3[3,3]
         // #10 $display("out_data = %d", out_data);

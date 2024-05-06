@@ -1,10 +1,10 @@
 `timescale 1ns/10ps
 // `define SDFFILE    "../SYN/SET_syn.sdf"    // Modify your sdf file name here
-`define cycle 50.0 // 25.0
-`define terminate_cycle 400000 // 400000 // Modify your terminate cycle here
+`define cycle 25.0
+`define terminate_cycle 100000 // Modify your terminate cycle here
 
 
-module testfixture1;
+module testfixture3;
 
 `define in_pattern1 "in1.dat"
 `define in_pattern2 "in2.dat"
@@ -80,174 +80,11 @@ initial begin
 	rst = 1;
 #(`cycle*3);
 	rst = 0;
-	for(p = 0; p<total_test; p = p+1) begin
-		mx1_size = shape_mem[shape_mem_index+0] * shape_mem[shape_mem_index+1];
-		mx2_size = shape_mem[shape_mem_index+2] * shape_mem[shape_mem_index+3];
-		for (k = 0; k<mx1_size+mx2_size; k = k+1) begin
-			@(negedge clk);
-				#(`cycle/4)	wait(busy == 0);
-					if(k < mx1_size)begin
-						if(k % shape_mem[shape_mem_index+1] == shape_mem[shape_mem_index+1] - 1)col_end = 1;
-						else col_end = 0;
-						if(k % mx1_size == mx1_size - 1)row_end = 1;
-						else row_end = 0;
-					end
-					else begin
-						if((k - mx1_size) % shape_mem[shape_mem_index+3] == shape_mem[shape_mem_index+3] - 1)col_end = 1;
-						else col_end = 0;
-						if((k - mx1_size) % mx2_size == mx2_size - 1)row_end = 1;
-						else row_end = 0;
-					end
-					in_data = in_mem[current_k+k];
-		end
-		current_k = current_k+k;
-		@(negedge clk); begin
-			row_end = 0;
-			col_end = 0;
-		end
-		begin:Test
-			for(check_index=0;check_index<shape_mem[shape_mem_index+0]*shape_mem[shape_mem_index+3];check_index=check_index+1)begin
-				#(`cycle)
-				wait (valid == 1);
-				@(negedge clk); begin
-					if(shape_mem[shape_mem_index+1] != shape_mem[shape_mem_index+2])begin
-						if(!is_legal)begin
-							$display(" 1:Pattern %d is PASS !", total + check_index);
-						end
-						else begin
-							$display(" 2:Pattern %d is FAIL !. Expected is_legal = %d, but the Response is_legal = %d !!", total + check_index,0,is_legal);//check
-							err_cnt = err_cnt + 1;
-						end
-						total = total + 1 - shape_mem[shape_mem_index+0]*shape_mem[shape_mem_index+3];
-						out_num = out_num - shape_mem[shape_mem_index+0]*shape_mem[shape_mem_index+3];
-						disable Test;
-					end
-					else if (out_data === out_mem[out_num + check_index])
-						if(check_index % shape_mem[shape_mem_index+3] == shape_mem[shape_mem_index+3] - 1)begin
-							if(change_row == 1)begin
-								$display(" 4:Pattern %d is PASS !", total + check_index);
-							end
-							else  begin
-								$display(" 3:Pattern %d out_data is PASS ! but change_row is FAIL !. Expected 1 but get %d", total + check_index,change_row);
-								err_cnt = err_cnt + 1;
-							end
-						end
-						else begin
-							if(change_row == 0)begin
-								$display(" 6:Pattern %d is PASS !", total + check_index); //Expected value = %d, but the Response value = %d !!", total + check_index, out_mem[out_num + check_index], out_data
-							end
-							else  begin
-								$display(" 5:Pattern %d out_data is PASS ! but change_row is FAIL !. Expected 0 but get 1", total + check_index);
-								err_cnt = err_cnt + 1;
-							end
-						end
-
-					else begin
-						$display(" 7:Pattern %d is FAIL !. Expected value = %d, but the Response value = %d !! ", total + check_index, out_mem[out_num + check_index], out_data);
-						err_cnt = err_cnt + 1;
-					end
-				end
-			end
-		end
-		out_num = out_num + shape_mem[shape_mem_index+0]*shape_mem[shape_mem_index+3];
-		total = total + shape_mem[shape_mem_index+0]*shape_mem[shape_mem_index+3];
-		shape_mem_index = shape_mem_index + 4;
-	end
-	total_error = err_cnt;
-	if(err_cnt == 0)begin
-		score = score + 40;
-		$display("Pattern 1 pass");
-	end
 	err_cnt = 0;
 	k = 0;
 	shape_mem_index = 0;
 	current_k = 0;
 	out_num = 0;
-
-	for(p = 0; p<total_test; p = p+1) begin
-		mx1_size = shape_mem2[shape_mem_index+0] * shape_mem2[shape_mem_index+1];
-		mx2_size = shape_mem2[shape_mem_index+2] * shape_mem2[shape_mem_index+3];
-		for (k = 0; k<mx1_size+mx2_size; k = k+1) begin
-			@(negedge clk);
-				#(`cycle/4)	wait(busy == 0);
-					if(k < mx1_size)begin
-						if(k % shape_mem2[shape_mem_index+1] == shape_mem2[shape_mem_index+1] - 1)col_end = 1;
-						else col_end = 0;
-						if(k % mx1_size == mx1_size - 1)row_end = 1;
-						else row_end = 0;
-					end
-					else begin
-						if((k - mx1_size) % shape_mem2[shape_mem_index+3] == shape_mem2[shape_mem_index+3] - 1)col_end = 1;
-						else col_end = 0;
-						if((k - mx1_size) % mx2_size == mx2_size - 1)row_end = 1;
-						else row_end = 0;
-					end
-					in_data = in_mem2[current_k+k];
-		end
-		current_k = current_k+k;
-		@(negedge clk); begin
-			row_end = 0;
-			col_end = 0;
-		end
-		begin:Test2
-			for(check_index=0;check_index<shape_mem2[shape_mem_index+0]*shape_mem2[shape_mem_index+3];check_index=check_index+1)begin
-				#(`cycle)
-				wait (valid == 1);
-				@(negedge clk); begin
-					if(shape_mem2[shape_mem_index+1] != shape_mem2[shape_mem_index+2])begin
-						if(!is_legal)begin
-							$display(" 1:Pattern %d is PASS !", total + check_index);
-						end
-						else begin
-							$display(" 2:Pattern %d is FAIL !. Expected is_legal = %d, but the Response is_legal = %d !!", total + check_index,0,is_legal);//check
-							err_cnt = err_cnt + 1;
-						end
-						total = total + 1 - shape_mem2[shape_mem_index+0]*shape_mem2[shape_mem_index+3];
-						out_num = out_num - shape_mem2[shape_mem_index+0]*shape_mem2[shape_mem_index+3];
-						disable Test2;
-					end
-					else if (out_data === out_mem2[out_num + check_index])
-						if(check_index % shape_mem2[shape_mem_index+3] == shape_mem2[shape_mem_index+3] - 1)begin
-							if(change_row == 1)begin
-								$display(" 4:Pattern %d is PASS !", total + check_index);
-							end
-							else  begin
-								$display(" 3:Pattern %d out_data is PASS ! but change_row is FAIL !. Expected 1 but get %d", total + check_index,change_row);
-								err_cnt = err_cnt + 1;
-							end
-						end
-						else begin
-							if(change_row == 0)begin
-								$display(" 6:Pattern %d is PASS !", total + check_index); //Expected value = %d, but the Response value = %d !!", total + check_index, out_mem[out_num + check_index], out_data
-							end
-							else  begin
-								$display(" 5:Pattern %d out_data is PASS ! but change_row is FAIL !. Expected 0 but get 1", total + check_index);
-								err_cnt = err_cnt + 1;
-							end
-						end
-
-					else begin
-						$display(" 7:Pattern %d is FAIL !. Expected value = %d, but the Response value = %d !! ", total + check_index, out_mem2[out_num + check_index], out_data);
-						err_cnt = err_cnt + 1;
-					end
-				end
-			end
-		end
-		out_num = out_num + shape_mem2[shape_mem_index+0]*shape_mem2[shape_mem_index+3];
-		total = total + shape_mem2[shape_mem_index+0]*shape_mem2[shape_mem_index+3];
-		shape_mem_index = shape_mem_index + 4;
-	end
-	total_error = total_error + err_cnt;
-	if(err_cnt == 0)begin
-		score = score + 30;
-		$display("Pattern 2 pass");
-	end
-	err_cnt = 0;
-	k = 0;
-	shape_mem_index = 0;
-	current_k = 0;
-	out_num = 0;
-
 	for(p = 0; p<total_test; p = p+1) begin
 		mx1_size = shape_mem3[shape_mem_index+0] * shape_mem3[shape_mem_index+1];
 		mx2_size = shape_mem3[shape_mem_index+2] * shape_mem3[shape_mem_index+3];
@@ -323,11 +160,20 @@ initial begin
 		shape_mem_index = shape_mem_index + 4;
 	end
 	total_error = total_error + err_cnt;
+	// display error_count
 	$display("Pattern 3: err_cnt = %d",err_cnt);
 	if(err_cnt == 0)begin
 		score = score + 30;
 		$display("Pattern 3 pass");
 	end
+
+
+
+
+
+
+
+
 
 #(`cycle*2);
      $display("--------------------------- Simulation FINISH !!---------------------------");
