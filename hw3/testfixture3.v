@@ -1,7 +1,8 @@
 `timescale 1ns/10ps
 // `define SDFFILE    "../SYN/SET_syn.sdf"    // Modify your sdf file name here
 `define cycle 25.0
-`define terminate_cycle 100000 // Modify your terminate cycle here
+`define terminate_cycle 400000
+// Modify your terminate cycle here
 
 
 module testfixture3;

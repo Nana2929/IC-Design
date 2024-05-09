@@ -1,9 +1,7 @@
 `timescale 1ns/10ps
-// `define SDFFILE    "../SYN/SET_syn.sdf"    // Modify your sdf file name here
-`define cycle 50.0 // 25.0
-`define terminate_cycle 400000 // 400000 // Modify your terminate cycle here
-
-
+// `define SDFFILE "MM_v.sdo"    // Modify your sdf file name here
+`define cycle 50.0
+`define terminate_cycle 400000
 module testfixture1;
 
 `define in_pattern1 "in1.dat"

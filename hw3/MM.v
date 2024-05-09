@@ -21,10 +21,8 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
     output reg change_row, valid, busy;
     reg wr_enable, compute_enable, is_first_mat;
     reg [N-1:0] i, j;
-    reg [N-1:0] next_i, next_j, next_change_row;
     reg [2:0] currState, nextState;
     reg reset;
-    reg first_mat_end, second_mat_end;
     parameter [2:0] RESET=3'b000, INPUT_MAT1=3'b001, INPUT_MAT2=3'b010, COMPUTE=3'b011, OUTPUT=3'b100, IDLE=3'b101;
     reg [N-1:0] M1_height, M1_width, M2_height, M2_width;
     reg [N-1:0] match_dim;
@@ -32,6 +30,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
 
     reg [DATA_WIDTH-1:0] in_data_;
     reg col_end_, row_end_;
+
     always@(negedge clk)begin
         in_data_ <= in_data;
         col_end_ <= col_end;
@@ -45,7 +44,7 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
         .compute_enable(compute_enable),
         .in_data(in_data_),
         .i(i), .j(j),
-        .is_first_mat(is_first_mat),
+        .is_first_mat(is_first_mat), // !! 	Info (13166): Latch is_first_mat is being clocked by currState.COMPUTE
         .match_dim(match_dim),
         .out_data(out_data));
 
@@ -72,91 +71,92 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
         end
         else begin
             currState <= nextState;
-            i <= next_i; j <= next_j;
-            change_row <= next_change_row;
-        end
-    end
-
-    always@(*) begin
-        case(currState)
-            INPUT_MAT1: begin
+            if (currState == INPUT_MAT1) begin
                 if (col_end_ && row_end_) begin
                     M1_height = i + 1;
                     M1_width = j + 1;
-                    next_i = 0; next_j = 0; first_mat_end = 1;
+                    i = 0;
+                    j = 0;
                 end
                 else if (col_end_) begin
-                    next_i = i + 1;
-                    next_j = 0;
+                    i = i + 1;
+                    j = 0;
                 end
                 else begin
-                    next_j = j + 1;
-                end
-
-                if (first_mat_end) begin
-                    nextState = INPUT_MAT2;
-                end
-                else begin
-                    nextState = INPUT_MAT1;
+                    j = j + 1;
                 end
             end
-            INPUT_MAT2: begin
+            if (currState == INPUT_MAT2) begin
                 if (col_end_ && row_end_) begin
                     M2_height = i + 1;
                     M2_width = j + 1;
-                    next_i = 0; next_j = 0;
-                    second_mat_end = 1;
+                    i = 0; j = 0;
                 end
                 else if (col_end_) begin
-                    next_i = i + 1;
-                    next_j = 0;
-                end 
-                else begin
-                    next_j = j + 1;
-                end
-                if (second_mat_end) begin
-                    nextState = COMPUTE;
+                    i = i + 1;
+                    j = 0;
                 end
                 else begin
-                    nextState = INPUT_MAT2;
+                    j = j + 1;
                 end
-            end
-            COMPUTE: begin
                 if (M1_width == M2_height) begin
                     match_dim = M1_width;
+                end
+            end
+            if (currState == COMPUTE) begin
+                if (M1_width == M2_height) begin
                     is_legal = 1;
                     if (i < M1_height) begin
                         if (j+1 < M2_width) begin
-                            next_j = j + 1;
-                            next_change_row = 0;
+                            j = j + 1;
+                            change_row = 0;
                         end
                         else begin
-                            next_i = i + 1;
-                            next_j = 0;
-                            next_change_row = 1;
+                            i = i + 1;
+                            j = 0;
+                            change_row = 1;
                         end
                     end
                 end
                 else begin
                     is_legal = 0;
                 end
+            end
+            if (currState == RESET) begin
+                i = 0; j = 0;
+                M1_height = 0; M1_width = 0; M2_height = 0; M2_width = 0;
+            end
+        end
+    end
+    // declaration: reg [N-1:0] M1_height, M1_width, M2_height, M2_width;
+    always@(*) begin
+        case(currState)
+            INPUT_MAT1: begin
+                nextState = INPUT_MAT1;
+                if (col_end_ && row_end_) begin
+                    nextState = INPUT_MAT2;
+                end
+            end
+            INPUT_MAT2: begin
+                nextState = INPUT_MAT2;
+                if (col_end_ && row_end_) begin
+                    nextState = COMPUTE;
+                end
+            end
+            COMPUTE: begin
                 nextState = OUTPUT;
             end
             RESET: begin
-                first_mat_end = 0;
-                second_mat_end = 0;
-                M1_height = 0; M1_width = 0; M2_height = 0; M2_width = 0;
-                next_i = 0; next_j = 0;
                 nextState = IDLE;
             end
             IDLE: begin
                 nextState = INPUT_MAT1;
             end
             OUTPUT: begin
-                nextState = COMPUTE;
-                if (next_i == M1_height || is_legal == 0) begin
+                if (i == M1_height || is_legal == 0) begin
                     nextState = RESET;
                 end
+                else nextState = COMPUTE;
             end
         endcase
     end
@@ -164,34 +164,39 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
     always@(currState) begin
         case(currState)
             IDLE: begin
-                valid = 0;
-                busy = 0;
                 wr_enable = 0;
                 compute_enable = 0;
+                is_first_mat = 0; // dont care
+                valid = 0;
+                busy = 0;
             end
             RESET: begin
                 wr_enable = 0;
                 compute_enable = 0;
                 is_first_mat = 0;
                 valid = 0;
+                busy = 0;
             end
             INPUT_MAT1: begin
-                busy = 0;
+                wr_enable = 1;
                 compute_enable = 0;
                 is_first_mat = 1;
-                wr_enable = 1;
+                valid = 0;
+                busy = 0;
             end
             INPUT_MAT2: begin
-                busy = 0;
+                wr_enable = 1;
                 compute_enable = 0;
                 is_first_mat = 0;
-                wr_enable = 1;
+                valid = 0;
+                busy = 0;
             end
             COMPUTE: begin
                 compute_enable = 1;
                 valid = 0;
                 busy = 1;
                 wr_enable = 0;
+                is_first_mat = 0; // dont care
                 // compute_enable = 1;
                 // should be M1_width == M2_height, if not legal, then don't compute and just pull up valid and is_legal = 0
             end
@@ -199,6 +204,8 @@ module MM#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH=20)(i
                 wr_enable = 0;
                 compute_enable = 0;
                 valid = 1;
+                busy = 1;
+                is_first_mat = 0; // dont care
                 // simply let the out_data to be sent
             end
         endcase

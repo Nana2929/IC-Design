@@ -32,6 +32,7 @@ module MMHelper#(parameter DATA_WIDTH=8, parameter N=4, parameter OUT_DATA_WIDTH
             end
         end
         else begin
+            x = 0; y = 0;
             // if i or j crosses the bound, then do nothing
             if (i >= N || j >= N) begin
                 out_data <= 0;
