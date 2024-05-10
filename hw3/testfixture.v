@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 // `define SDFFILE "MM_v.sdo"    // Modify your sdf file name here
-`define cycle 50.0
+`define cycle 18.0
 `define terminate_cycle 400000
 module testfixture1;
 
