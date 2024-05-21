@@ -37,10 +37,11 @@ module MPQ#(
     // write_RAM: IDLE->(WRITE_RAM)*n -> IDLE 一次寫出一個資料
 
     // keep the cmd
+    reg need_exchange;
     reg [2:0] curr_cmd;
     reg [DATA_WIDTH-1:0] _data;
     reg _data_valid;
-    always@(posedge clk or posedge rst) begin
+    always@(negedge clk or posedge rst) begin
         _data <= data;
         _data_valid <= data_valid;
         if (cmd_valid) begin
@@ -49,10 +50,12 @@ module MPQ#(
         if (rst) begin
             curr_state <= RESET;
         end
-        else
-            begin curr_state <= next_state; end
+        else begin
+            curr_state <= next_state;
+            end
         case (curr_state)
         RESET: begin
+            need_exchange=0;
             busy=1; done=0;
             heap_size = 0;
             i         = 0;
@@ -70,10 +73,10 @@ module MPQ#(
             end
         end
         IDLE:begin
-            busy =1;
+            busy = 1;
             RAM_valid = 0;
             if (curr_cmd == build_queue)begin
-                outer_i = heap_size >> 1;end
+                outer_i = (heap_size-1) >> 1;end
             if (curr_cmd == write_RAM) begin
                 RAM_valid = 1;
                 address = 0;
@@ -113,19 +116,22 @@ module MPQ#(
             busy=1;
             largest = i;
             // left shift by 1 to indicate 2*i
-            left  = (i << 1) +1;
-            right = left + 1;
+            left  = (i << 1)+1;
+            right = left+1;
             if (left < heap_size && heap[left] > heap[largest])begin
                 largest = left;
             end
             if (right < heap_size && heap[right] > heap[largest])begin
                 largest = right;
             end
+            need_exchange = (largest != i);
         end
         _EXCHANGE:begin
             busy=1;
-            {heap[i], heap[largest]} = {heap[largest], heap[i]};
-            i = largest; // Move to new position
+            if (need_exchange)begin
+                {heap[i], heap[largest]} = {heap[largest], heap[i]};
+                i = largest; // Move to new position
+            end
         end
         DONE_MAX_HEAPIFY:begin // caller
             busy=1;
@@ -201,15 +207,15 @@ module MPQ#(
                 endcase
             end
             _FIND_LARGEST: begin
-                if (largest != i)begin
-                    next_state = _EXCHANGE;
-                end
-                else begin
-                    next_state = DONE_MAX_HEAPIFY;
-                end
+                next_state = _EXCHANGE;
             end
             _EXCHANGE: begin
-                next_state = _FIND_LARGEST; // recursive call to find largest
+                if (i == largest) begin
+                    next_state = DONE_MAX_HEAPIFY;
+                end
+                else begin
+                    next_state = _FIND_LARGEST; // recursive call to find largest
+                end
             end
             DONE_COMMAND: begin
                 next_state = IDLE;
