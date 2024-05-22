@@ -79,7 +79,7 @@ module MPQ#(
             end
         end
         IDLE:begin
-            busy = 0;
+            busy = 1;
             RAM_valid = 0;
             done_command = 0;
             if (curr_cmd == build_queue)begin
@@ -91,7 +91,8 @@ module MPQ#(
         end
         DECREASE_VAL: begin
             busy=1;
-            heap[0] = 0;
+            heap[0] = heap[heap_size-1];
+            heap_size = heap_size - 1;
             i       = 0;
         end
         ADD_DATA: begin
@@ -142,11 +143,8 @@ module MPQ#(
         end
         DONE_MAX_HEAPIFY:begin // caller
             busy=1;
-            if (curr_cmd == extract_max)begin
-                heap[heap_size-1] = 0;
-                heap_size = heap_size - 1;
-                next_state        = IDLE;
-            end
+            next_state        = IDLE;
+
         end
         DONE_COMMAND:begin
             busy = 0;
