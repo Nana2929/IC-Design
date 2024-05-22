@@ -39,13 +39,18 @@ module MPQ#(
     // keep the cmd
     reg need_exchange;
     reg [2:0] curr_cmd;
-    reg [DATA_WIDTH-1:0] _data;
-    reg _data_valid;
+    // reg [DATA_WIDTH-1:0] _data;
+    // reg _data_valid;
+    reg done_command;
+    reg [2:0] next_cmd;
     always@(negedge clk or posedge rst) begin
-        _data <= data;
-        _data_valid <= data_valid;
+        // _data <= data;
+        // _data_valid <= data_valid;
         if (cmd_valid) begin
-            curr_cmd <= cmd;
+            next_cmd = cmd;
+        end
+        if (done_command) begin
+            curr_cmd = next_cmd;
         end
         if (rst) begin
             curr_state <= RESET;
@@ -64,8 +69,9 @@ module MPQ#(
         end
         WRITE_ARRAY: begin
             busy=1;
-            if (_data_valid) begin
-                heap[heap_size] = _data;
+
+            if (data_valid) begin
+                heap[heap_size] = data;
                 heap_size = heap_size + 1;
             end
             else begin
@@ -73,8 +79,9 @@ module MPQ#(
             end
         end
         IDLE:begin
-            busy = 1;
+            busy = 0;
             RAM_valid = 0;
+            done_command = 0;
             if (curr_cmd == build_queue)begin
                 outer_i = (heap_size-1) >> 1;end
             if (curr_cmd == write_RAM) begin
@@ -143,9 +150,15 @@ module MPQ#(
         end
         DONE_COMMAND:begin
             busy = 0;
+            done_command=1;
+            RAM_valid  = 0;
+            if (curr_cmd == write_RAM)begin
+                done = 1;
+            end
         end
         WRITE_RAM:begin
             busy = 1;
+            RAM_valid = 1;
             RAM_A     = address;
             RAM_D     = heap[address];
             address   = address + 1;
@@ -160,15 +173,15 @@ module MPQ#(
                 next_state = WRITE_ARRAY;
             end
             WRITE_ARRAY: begin
-                if (_data_valid) begin
+                if (data_valid) begin
                     next_state = WRITE_ARRAY;
                 end
                 else begin
-                    next_state = IDLE;
+                    next_state = DONE_COMMAND;
                 end
             end
             IDLE:begin
-            case (curr_cmd)
+            case (next_cmd)
                 build_queue: next_state    = BUILD_QUEUE;
                 extract_max: next_state    = DECREASE_VAL;
                 increase_value: next_state = INCREASE_VAL;
@@ -222,8 +235,6 @@ module MPQ#(
             end
             WRITE_RAM: begin
                 if (address == heap_size) begin
-                    RAM_valid  = 0;
-                    done      = 1;
                     next_state = DONE_COMMAND;
                 end
                 else begin
