@@ -21,36 +21,44 @@ module MPQ#(
     reg [7:0] i, left, right, largest; // Indices for heap manipulation
     reg [7:0] address; // Address for RAM
     // State machine
-    // typedef enum {IDLE, DECREASE_VAL, ADD_DATA, INCREASE_VAL, BUILD_QUEUE, DONE_MAX_HEAPIFY, DONE_COMMAND,_FIND_LARGEST, _EXCHANGE} state_type;
+    // typedef enum {IDLE, EXCHANGE_VAL, ADD_DATA, INCREASE_VAL, BUILD_QUEUE, DONE_MAX_HEAPIFY, DONE_COMMAND,_FIND_LARGEST, _EXCHANGE} state_type;
     // state_type curr_state, next_state;
-    reg [3:0] IDLE=4'b0000, DECREASE_VAL=4'b0001, ADD_DATA=4'b0010, INCREASE_VAL=4'b0011, BUILD_QUEUE=4'b0100,
-        DONE_MAX_HEAPIFY=4'b0101, DONE_COMMAND=4'b0110, _FIND_LARGEST=4'b0111, _EXCHANGE=4'b1000, WRITE_RAM=4'b1001, RESET =4'b1010,WRITE_ARRAY=4'b1011;
+    reg [3:0] IDLE=4'b0000, EXCHANGE_VAL=4'b0001, ADD_DATA=4'b0010, INCREASE_VAL=4'b0011, BUILD_QUEUE=4'b0100,
+        DONE_MAX_HEAPIFY=4'b0101, DONE_COMMAND=4'b0110, _FIND_LARGEST=4'b0111, _EXCHANGE=4'b1000, WRITE_RAM=4'b1001, RESET =4'b1010,WRITE_ARRAY=4'b1011, UP_MAXIFY=4'b1100;
     reg [3:0] curr_state, next_state;
     // command signal
     reg [2:0] build_queue = 3'b000, extract_max = 3'b001, increase_value = 3'b010, insert_data = 3'b011, write_RAM = 3'b100;
 
     // max_heapify: FIND_LARGEST + EXCHANGE
     // build_queue: IDLE->BUILD_QUEUE->(FIND_LARGEST->EXCHANGE->DONE_MAX_HEAPIFY)*n -> BUILD_QUEUE ->IDLE
-    // extract_max: IDLE->DECREASE_VAL->(FIND_LARGEST->EXCHANGE->DONE_MAX_HEAPIFY)*1 -> IDLE
+    // extract_max: IDLE->EXCHANGE_VAL->(FIND_LARGEST->EXCHANGE->DONE_MAX_HEAPIFY)*1 -> IDLE
     // increase_value: IDLE->INCREASE_VAL->(FIND_LARGEST->EXCHANGE->DONE_MAX_HEAPIFY)*1 -> IDLE
     // insert_data: IDLE->ADD_DATA->(FIND_LARGEST->EXCHANGE->DONE_MAX_HEAPIFY)*1 -> IDLE
     // write_RAM: IDLE->(WRITE_RAM)*n -> IDLE 一次寫出一個資料
 
     // keep the cmd
+    reg [7:0] parent;
     reg need_exchange;
-    reg [2:0] curr_cmd;
-    // reg [DATA_WIDTH-1:0] _data;
-    // reg _data_valid;
     reg done_command;
+
+    reg [2:0] curr_cmd;
+    reg [7:0] curr_value;
+    reg [7:0] curr_index;
     reg [2:0] next_cmd;
+    reg [7:0] next_value;
+    reg [7:0] next_index;
     always@(negedge clk or posedge rst) begin
         // _data <= data;
         // _data_valid <= data_valid;
         if (cmd_valid) begin
             next_cmd = cmd;
+            next_value = value;
+            next_index = index;
         end
         if (done_command) begin
             curr_cmd = next_cmd;
+            curr_value = next_value;
+            curr_index = next_index;
         end
         if (rst) begin
             curr_state <= RESET;
@@ -89,7 +97,7 @@ module MPQ#(
                 address = 0;
             end
         end
-        DECREASE_VAL: begin
+        EXCHANGE_VAL: begin
             busy=1;
             heap[0] = heap[heap_size-1];
             heap_size = heap_size - 1;
@@ -103,12 +111,23 @@ module MPQ#(
         end
         INCREASE_VAL: begin
             busy=1;
-            if (value < heap[i]) begin
+            if (curr_value < heap[curr_index]) begin
             end
             else begin
-                heap[i] = value;
+                heap[curr_index] = curr_value;
+                // !!need to heapify upwards...!!
+                i = curr_index;
             end
         end
+
+        UP_MAXIFY:begin
+            parent = (i-1) >> 1;
+            if (heap[parent] < heap[i])begin
+                {heap[parent], heap[i]} = {heap[i], heap[parent]};
+                i = parent;
+            end
+        end
+
         BUILD_QUEUE:begin
             busy=1;
             if (outer_i >= 0)begin
@@ -181,22 +200,22 @@ module MPQ#(
             IDLE:begin
             case (next_cmd)
                 build_queue: next_state    = BUILD_QUEUE;
-                extract_max: next_state    = DECREASE_VAL;
+                extract_max: next_state    = EXCHANGE_VAL;
                 increase_value: next_state = INCREASE_VAL;
                 insert_data: next_state    = ADD_DATA;
                 write_RAM: next_state      = WRITE_RAM;
                 default: next_state        = IDLE;
             endcase end
-            DECREASE_VAL:begin
+            EXCHANGE_VAL:begin
                 next_state = _FIND_LARGEST;end
             ADD_DATA:begin
                 next_state = _FIND_LARGEST;end
             INCREASE_VAL:begin
-                if (value < heap[i]) begin
+                if (curr_value < heap[curr_index]) begin
                     next_state = DONE_COMMAND;
                 end
                 else begin
-                    next_state = _FIND_LARGEST;
+                    next_state = UP_MAXIFY;
                 end
             end
             BUILD_QUEUE:begin
@@ -216,6 +235,14 @@ module MPQ#(
                     write_RAM: next_state      = DONE_COMMAND;
                     default: next_state        = DONE_COMMAND;
                 endcase
+            end
+            UP_MAXIFY:begin
+                if (parent >= 0 && heap[parent] < heap[i])begin
+                    next_state = UP_MAXIFY;
+                end
+                else begin
+                    next_state = DONE_COMMAND;
+                end
             end
             _FIND_LARGEST: begin
                 next_state = _EXCHANGE;
