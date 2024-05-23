@@ -24,7 +24,8 @@ module MPQ#(
     // typedef enum {IDLE, EXCHANGE_VAL, ADD_DATA, INCREASE_VAL, BUILD_QUEUE, DONE_MAX_HEAPIFY, DONE_COMMAND,_FIND_LARGEST, _EXCHANGE} state_type;
     // state_type curr_state, next_state;
     reg [3:0] IDLE=4'b0000, EXCHANGE_VAL=4'b0001, ADD_DATA=4'b0010, INCREASE_VAL=4'b0011, BUILD_QUEUE=4'b0100,
-        DONE_MAX_HEAPIFY=4'b0101, DONE_COMMAND=4'b0110, _FIND_LARGEST=4'b0111, _EXCHANGE=4'b1000, WRITE_RAM=4'b1001, RESET =4'b1010,WRITE_ARRAY=4'b1011, UP_MAXIFY=4'b1100;
+        DONE_MAX_HEAPIFY=4'b0101, DONE_COMMAND=4'b0110, _FIND_LARGEST=4'b0111, _EXCHANGE=4'b1000, WRITE_RAM=4'b1001, RESET =4'b1010,WRITE_ARRAY=4'b1011,
+        UP_MAXIFY=4'b1100;
     reg [3:0] curr_state, next_state;
     // command signal
     reg [2:0] build_queue = 3'b000, extract_max = 3'b001, increase_value = 3'b010, insert_data = 3'b011, write_RAM = 3'b100;
@@ -42,8 +43,8 @@ module MPQ#(
     reg done_command;
 
     reg [2:0] curr_cmd;
-    reg [7:0] curr_value;
-    reg [7:0] curr_index;
+    reg [7:0] curr_value, increase_val_value; // argument
+    reg [7:0] curr_index, increase_val_index;
     reg [2:0] next_cmd;
     reg [7:0] next_value;
     reg [7:0] next_index;
@@ -92,6 +93,10 @@ module MPQ#(
             done_command = 0;
             if (curr_cmd == build_queue)begin
                 outer_i = (heap_size-1) >> 1;end
+            if (curr_cmd == increase_value) begin
+                increase_val_value = curr_value;
+                increase_val_index = curr_index;
+            end
             if (curr_cmd == write_RAM) begin
                 RAM_valid = 1;
                 address = 0;
@@ -106,28 +111,25 @@ module MPQ#(
         ADD_DATA: begin
             busy=1;
             heap_size         = heap_size + 1;
-            heap[heap_size-1] = data;
-            i                 = 0;
+            heap[heap_size-1] = 0;
+            increase_val_index                 = heap_size-1;
+            increase_val_value                 = curr_value;
         end
         INCREASE_VAL: begin
             busy=1;
-            if (curr_value < heap[curr_index]) begin
+            if (increase_val_value < heap[increase_val_index]) begin
             end
             else begin
-                heap[curr_index] = curr_value;
+                heap[increase_val_index] = increase_val_value;
                 // !!need to heapify upwards...!!
-                i = curr_index;
+                i = increase_val_index;
             end
         end
-
         UP_MAXIFY:begin
-            parent = (i-1) >> 1;
-            if (heap[parent] < heap[i])begin
+            if (parent >= 0 && heap[parent] < heap[i])
                 {heap[parent], heap[i]} = {heap[i], heap[parent]};
                 i = parent;
-            end
         end
-
         BUILD_QUEUE:begin
             busy=1;
             if (outer_i >= 0)begin
@@ -209,9 +211,9 @@ module MPQ#(
             EXCHANGE_VAL:begin
                 next_state = _FIND_LARGEST;end
             ADD_DATA:begin
-                next_state = _FIND_LARGEST;end
+                next_state = INCREASE_VAL;end
             INCREASE_VAL:begin
-                if (curr_value < heap[curr_index]) begin
+                if (increase_val_value < heap[increase_val_index]) begin
                     next_state = DONE_COMMAND;
                 end
                 else begin
@@ -237,6 +239,7 @@ module MPQ#(
                 endcase
             end
             UP_MAXIFY:begin
+                parent = (i-1) >> 1;
                 if (parent >= 0 && heap[parent] < heap[i])begin
                     next_state = UP_MAXIFY;
                 end
