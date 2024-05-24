@@ -22,3 +22,8 @@ Put all `*.v` into same-level of the `hw*` directory
 - Run `vsim` and add files following `functional_sim` slides on Moodle/Google Slides to check the waves and functional-sim results
 - Open Quartus and set up to run synthesis
 - Use `*.vo` and `*.sdo` to run gate-level simulation.
+
+
+## lib paths
+/home/nanaeilish/intelFPGA/20.1/modelsim_ase/altera/verilog/altera
+/home/nanaeilish/intelFPGA/20.1/modelsim_ase/altera/verilog/cycloneive
