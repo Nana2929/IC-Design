@@ -116,13 +116,18 @@ always @(posedge clk or posedge rst) begin
                 end
             end
             calculate:begin
+                // Q: When do we need to check the overflow?
+                // A: When we finish adding ith row in mx1 * jth col in mx2
+                //    i.e., when we can get the final result of one element (i,j) in the output matrix
+                // The signal for indicating "one row in mx1 * one col in mx2"
+                // i = mx1_row_cnt, j = mx2_col_cnt
+                // is "mx2_row_cnt == mx2_row-1"
                 buffer <= buffer + temp_sum;
                 if(mx2_col_cnt == mx2_col-1 && mx2_row_cnt == mx2_row-1)change_row <= 1;
                 else change_row <= 0;
-
                 if(mx2_row_cnt == mx2_row -1 && mx2_col_cnt == mx2_col -1)begin
-                    // we finish adding one row in mx1 with all cols in mx2
-                    
+                    // we finish adding one row in mx1 * one col in mx2,
+                    // AND the col in mx2 happens to be the last col
                     mx2_row_cnt <= 0;
                     mx2_col_cnt <= 0;
                     mx1_row_cnt <= mx1_row_cnt + 1;
@@ -145,6 +150,8 @@ always @(posedge clk or posedge rst) begin
                 else mx1_col_cnt <= mx1_col_cnt + 1;
             end
             hold:begin
+                // when we finish adding one row in mx1 * one col in mx2, we need to stop to
+                // clear the buffer and valid signal and to get prep for the next output element
                 buffer <= 0;
                 valid <= 0;
                 overflow <= 0;
