@@ -21,7 +21,7 @@ wire signed [15:0] temp_sum = mx1[mx1_row_cnt * mx1_col + mx1_col_cnt] * mx2[mx2
 reg signed [15:0]buffer;
 assign   out_data = buffer[11:0];
 // 處理了 mx 的形狀問題（ep）對應到 Q2.Pattern 3
-// overflow 還沒有處理
+// overflow 有處理
 parameter
 load_mx1 = 0,
 load_mx2 = 1,
