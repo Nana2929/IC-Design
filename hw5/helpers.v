@@ -130,7 +130,7 @@ module RoundKeyGenerator(rc, i_key, o_key);
 
     function automatic [31:0] Rcon(input [3:0] rc1);
         case(rc1)
-            4'b0000: Rcon = 32'h01_00_00_00;//Underscores are used to improve readability of bytes.
+            4'b0000: Rcon = 32'h01_00_00_00;
             4'b0001: Rcon = 32'h02_00_00_00;
             4'b0010: Rcon = 32'h04_00_00_00;
             4'b0011: Rcon = 32'h08_00_00_00;

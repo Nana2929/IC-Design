@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
-`define CYCLE      8.5  
-`define End_CYCLE  10000
+`define CYCLE      18 // 32 okay
+`define End_CYCLE  5000
 
 module tb();
 

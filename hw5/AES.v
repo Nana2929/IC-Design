@@ -20,7 +20,6 @@ module AES(
     wire [127:0] key_result [0:NUM_ROUNDS];
     wire [127:0] P_result [0:NUM_ROUNDS];
 
-
     AESRound r1(.rc(4'b0000), .Pi(P_mem[0]), .Ki(key_mem[0]), .Po(P_result[0]), .Ko(key_result[0]));
     AESRound r2(.rc(4'b0001), .Pi(P_mem[1]), .Ki(key_mem[1]), .Po(P_result[1]), .Ko(key_result[1]));
     AESRound r3(.rc(4'b0010), .Pi(P_mem[2]), .Ki(key_mem[2]), .Po(P_result[2]), .Ko(key_result[2]));
@@ -37,25 +36,25 @@ module AES(
     always@(posedge clk or posedge rst) begin
         if (rst) begin
             // clean key_mem, P_mem
-
-            for (i = 0; i < NUM_ROUNDS; i = i + 1) begin
+            for (i = 0; i <= NUM_ROUNDS; i = i + 1) begin
                 key_mem[i] <= 128'h0;
                 P_mem[i] <= 128'h0;
             end
             r_count <= 0;
             valid <= 0;
         end
-        else
+        else begin
             r_count <= r_count + 1; // the global round count
             key_mem[0] <= K;
             P_mem[0] <= P ^ K;
             // round 1 ~ 9
             for (i = 1; i <= NUM_ROUNDS; i = i + 1) begin
                 key_mem[i] <= key_result[i - 1];
-                // add round key 
+                // add round key
                 P_mem[i] <= P_result[i - 1] ^ key_result[i - 1];
             end
             C <= P_mem[NUM_ROUNDS];
             valid <= 1 & (r_count > NUM_ROUNDS+1);
+			end
     end
 endmodule
