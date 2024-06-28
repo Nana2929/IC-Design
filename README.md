@@ -1,16 +1,16 @@
 # IC-Design
 ## Topics
-- hw1: Modular-Adder-Subtractor (2-input MAS)
-- hw2: Check-in Pick-up System (CIPU)
-- hw3: Matrix Multiplier (MM)
-    - With Gate-level simulation and performance scoring
-    - 95, Functional: 60/60, gate-level: 20/20, performance: 15/20
-- hw4: Priority Queue (PQ)
-    - With Gate-level simulation and performance scoring
-    - 87, Functional: 60/60, gate-level: 20/20, performance: 7/20
-- hw5: AES (128-bit) algorithm (encoding)
-    - With Gate-level simulation and performance scoring
-    - 88, Functional: 60/60, gate-level: 20/20, performance: 8/20
+### hw1: Modular-Adder-Subtractor (2-input MAS)
+### hw2: Check-in Pick-up System (CIPU)
+### hw3: Matrix Multiplier (MM)
+- With Gate-level simulation and performance scoring
+- 95, Functional: 60/60, gate-level: 20/20, performance: 15/20
+### hw4: Priority Queue (PQ)
+- With Gate-level simulation and performance scoring
+- 87, Functional: 60/60, gate-level: 20/20, performance: 7/20
+### hw5: AES (128-bit) algorithm (encoding)
+- With Gate-level simulation and performance scoring
+- 88, Functional: 60/60, gate-level: 20/20, performance: 8/20
 <!-- ## Time spent
 - hw1: 2 hours
 - hw2: About 4 days, 15 hours
@@ -27,7 +27,7 @@ Put all `*.v` into same-level of the `hw*` directory
 - Use `*.vo` and `*.sdo` to run gate-level simulation.
 
 
-## Gate-Level Simulation 
+## Gate-Level Simulation
 ### Library paths
 ```
 /home/nanaeilish/intelFPGA/20.1/modelsim_ase/altera/verilog/altera
