@@ -1,37 +1,37 @@
 `timescale 1ns/10ps
 `define CYCLE   15.0        //modify by yourself
 
-// `ifdef P0//Bulid_Queue,Write 30
-//    `define EXPECT   "./dat/P0/golden0.dat"
-//    `define CMD      "./dat/P0/cmd0.dat"
-//    `define INDEX    "./dat/P0/index0.dat"
-//    `define KEY      "./dat/P0/value0.dat"
-//    `define DATA     "./dat/P0/pat0.dat"
-//    `define DATA_NUM   12
-//    `define CMD_NUM    2
-//    `define GOLDEN_NUM 12
-//    `define End_CYCLE  1000  //modify by yourself
-// `elsif P1//Bulid_Queue,Extract_Max,Write 30
-   // `define EXPECT   "./dat/P1/golden1.dat"
-   // `define CMD      "./dat/P1/cmd1.dat"
-   // `define INDEX    "./dat/P1/index1.dat"
-   // `define KEY      "./dat/P1/value1.dat"
-   // `define DATA     "./dat/P1/pat1.dat"
-   // `define DATA_NUM   12
-   // `define CMD_NUM    5
-   // `define GOLDEN_NUM 9
-   // `define End_CYCLE  1000  //modify by yourself
-// `elsif P2//Bulid_Queue,Extract_Max,Increase_Value,Write 20
-   // `define EXPECT   "./dat/P2/golden2.dat"
-   // `define CMD      "./dat/P2/cmd2.dat"
-   // `define INDEX    "./dat/P2/index2.dat"
-   // `define KEY      "./dat/P2/value2.dat"
-   // `define DATA     "./dat/P2/pat2.dat"
-   // `define DATA_NUM   12
-   // `define CMD_NUM    8
-   // `define GOLDEN_NUM 9
-   // `define End_CYCLE  1000  //modify by yourself
-// `else    //Bulid_Queue,Extract_Max,Increase_Value,Insert_Data,Write 20
+`ifdef P0//Bulid_Queue,Write 30
+   `define EXPECT   "./dat/P0/golden0.dat"
+   `define CMD      "./dat/P0/cmd0.dat"
+   `define INDEX    "./dat/P0/index0.dat"
+   `define KEY      "./dat/P0/value0.dat"
+   `define DATA     "./dat/P0/pat0.dat"
+   `define DATA_NUM   12
+   `define CMD_NUM    2
+   `define GOLDEN_NUM 12
+   `define End_CYCLE  1000  //modify by yourself
+`elsif P1//Bulid_Queue,Extract_Max,Write 30
+   `define EXPECT   "./dat/P1/golden1.dat"
+   `define CMD      "./dat/P1/cmd1.dat"
+   `define INDEX    "./dat/P1/index1.dat"
+   `define KEY      "./dat/P1/value1.dat"
+   `define DATA     "./dat/P1/pat1.dat"
+   `define DATA_NUM   12
+   `define CMD_NUM    5
+   `define GOLDEN_NUM 9
+   `define End_CYCLE  1000  //modify by yourself
+`elsif P2//Bulid_Queue,Extract_Max,Increase_Value,Write 20
+   `define EXPECT   "./dat/P2/golden2.dat"
+   `define CMD      "./dat/P2/cmd2.dat"
+   `define INDEX    "./dat/P2/index2.dat"
+   `define KEY      "./dat/P2/value2.dat"
+   `define DATA     "./dat/P2/pat2.dat"
+   `define DATA_NUM   12
+   `define CMD_NUM    8
+   `define GOLDEN_NUM 9
+   `define End_CYCLE  1000  //modify by yourself
+`else    //Bulid_Queue,Extract_Max,Increase_Value,Insert_Data,Write 20
    `define EXPECT   "./dat/P3/golden3.dat"
    `define CMD      "./dat/P3/cmd3.dat"
    `define INDEX    "./dat/P3/index3.dat"
@@ -41,7 +41,7 @@
    `define CMD_NUM    12
    `define GOLDEN_NUM 13
    `define End_CYCLE  1000  //modify by yourself
-// `endif
+`endif
 
 `define SCORE      100
 
@@ -156,7 +156,7 @@ reg [7:0]err = 0;
 
 initial @(posedge done)begin
    for(k=0;k<`GOLDEN_NUM;k=k+1)begin
-      $display("%d: output %h,expect %h",k, U_RAM.RAM_M[k],expect_mem[k]);
+      $display("output %h,expect %h",U_RAM.RAM_M[k],expect_mem[k]);
       if( U_RAM.RAM_M[k] !== expect_mem[k] && expect_mem[k] !== 8'dx) begin
          $display("ERROR at %d:output %h !=expect %h ",k, U_RAM.RAM_M[k], expect_mem[k]);
          err = err+1 ;

@@ -22,25 +22,25 @@
    // `define GOLDEN_NUM 9
    // `define End_CYCLE  1000  //modify by yourself
 // `elsif P2//Bulid_Queue,Extract_Max,Increase_Value,Write 20
-   // `define EXPECT   "./dat/P2/golden2.dat"
-   // `define CMD      "./dat/P2/cmd2.dat"
-   // `define INDEX    "./dat/P2/index2.dat"
-   // `define KEY      "./dat/P2/value2.dat"
-   // `define DATA     "./dat/P2/pat2.dat"
-   // `define DATA_NUM   12
-   // `define CMD_NUM    8
-   // `define GOLDEN_NUM 9
-   // `define End_CYCLE  1000  //modify by yourself
-// `else    //Bulid_Queue,Extract_Max,Increase_Value,Insert_Data,Write 20
-   `define EXPECT   "./dat/P3/golden3.dat"
-   `define CMD      "./dat/P3/cmd3.dat"
-   `define INDEX    "./dat/P3/index3.dat"
-   `define KEY      "./dat/P3/value3.dat"
-   `define DATA     "./dat/P3/pat3.dat"
+   `define EXPECT   "./dat/P2/golden2.dat"
+   `define CMD      "./dat/P2/cmd2.dat"
+   `define INDEX    "./dat/P2/index2.dat"
+   `define KEY      "./dat/P2/value2.dat"
+   `define DATA     "./dat/P2/pat2.dat"
    `define DATA_NUM   12
-   `define CMD_NUM    12
-   `define GOLDEN_NUM 13
+   `define CMD_NUM    8
+   `define GOLDEN_NUM 9
    `define End_CYCLE  1000  //modify by yourself
+// `else    //Bulid_Queue,Extract_Max,Increase_Value,Insert_Data,Write 20
+   // `define EXPECT   "./dat/P3/golden3.dat"
+   // `define CMD      "./dat/P3/cmd3.dat"
+   // `define INDEX    "./dat/P3/index3.dat"
+   // `define KEY      "./dat/P3/value3.dat"
+   // `define DATA     "./dat/P3/pat3.dat"
+   // `define DATA_NUM   12
+   // `define CMD_NUM    12
+   // `define GOLDEN_NUM 13
+   // `define End_CYCLE  1000  //modify by yourself
 // `endif
 
 `define SCORE      100
@@ -158,11 +158,11 @@ initial @(posedge done)begin
    for(k=0;k<`GOLDEN_NUM;k=k+1)begin
       $display("%d: output %h,expect %h",k, U_RAM.RAM_M[k],expect_mem[k]);
       if( U_RAM.RAM_M[k] !== expect_mem[k] && expect_mem[k] !== 8'dx) begin
-         $display("ERROR at %d:output %h !=expect %h ",k, U_RAM.RAM_M[k], expect_mem[k]);
+         $display("ERROR at %d:output %d !=expect %d ",k, U_RAM.RAM_M[k], expect_mem[k]);
          err = err+1 ;
 		end
       else if ( U_RAM.RAM_M[k] === 8'dx && expect_mem[k] !== 8'dx) begin
-         $display("ERROR at %d:output %h !=expect %h ",k, U_RAM.RAM_M[k], expect_mem[k]);
+         $display("ERROR at %d:output %d !=expect %d ",k, U_RAM.RAM_M[k], expect_mem[k]);
          err = err+1;
       end
    over=1'b1;

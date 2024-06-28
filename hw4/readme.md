@@ -14,7 +14,7 @@
 
 ## Pseudo code
 https://hackmd.io/@5HlvW0J1QTmqg6azf_URYQ/Hy_lj5a6p
-
+Note that the pseudo-code is implemented using 1-indexed, but mine is 0-indexed.
 A : heap array
 
 MAX-HEAPIFY(A, i)
@@ -65,4 +65,4 @@ INSERT-DATA(A, value)
     A[A.heap-size] = -∞
     INCREASE-VALUE(A, A.heap-size, value)
 ```
-input : 一連串數字ex:[2,5,7,9,100,50,250,21,54,6,79,80]，輸入結束後須進行一次 BUILD-QUEUE 使RAM中資料符合 Max-heap 特性，而後輸入 EXTRACT-MAX、INCREASE-VALUE、INSERT-DATA 與 write 五個指令
+input : 一連串數字 eg: [2,5,7,9,100,50,250,21,54,6,79,80]，輸入結束後須進行一次 BUILD-QUEUE 使RAM中資料符合 Max-heap 特性，而後輸入 EXTRACT-MAX、INCREASE-VALUE、INSERT-DATA 與 write 五個指令
